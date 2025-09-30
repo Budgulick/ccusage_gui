@@ -84,6 +84,7 @@ config.json
 output/
 temp/
 cache/
+session_logs/
 # Note: assets/ should be tracked as it contains application icon
 
 # Documentation builds
