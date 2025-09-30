@@ -5,6 +5,7 @@
 **Mr. The Guru - Claude Code Usage** is a Windows-focused GUI application that provides the same functionality as the original [ccusage CLI tool](https://github.com/ryoppippi/ccusage) but with a user-friendly graphical interface. This project will implement all core features while adding visual enhancements and improved user experience.
 
 ### Application Branding
+
 - **Application Title**: "Mr. The Guru - Claude Code Usage"
 - **Application Icon**: `E:\Projects\ccusage_gui\assets\mrtheguru_icon_main.ico`
 - **Executable Name**: `mrtg_ccusage.exe`

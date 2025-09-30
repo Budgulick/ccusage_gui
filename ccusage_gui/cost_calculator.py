@@ -61,27 +61,28 @@ class CostCalculator:
     """
 
     # Default pricing data (fallback when online pricing fails)
+    # Pricing is per 1K tokens (converted from Anthropic's per-MTok pricing)
     DEFAULT_PRICING = {
         "claude-3-opus-20240229": ModelPricing(
             model_name="claude-3-opus-20240229",
-            input_price_per_1k=15.0,
-            output_price_per_1k=75.0,
-            cache_creation_price_per_1k=18.75,
-            cache_read_price_per_1k=1.5
+            input_price_per_1k=0.015,      # $15 per MTok
+            output_price_per_1k=0.075,      # $75 per MTok
+            cache_creation_price_per_1k=0.01875,  # $18.75 per MTok
+            cache_read_price_per_1k=0.0015  # $1.50 per MTok
         ),
         "claude-3-5-sonnet-20241022": ModelPricing(
             model_name="claude-3-5-sonnet-20241022",
-            input_price_per_1k=3.0,
-            output_price_per_1k=15.0,
-            cache_creation_price_per_1k=3.75,
-            cache_read_price_per_1k=0.3
+            input_price_per_1k=0.003,       # $3 per MTok
+            output_price_per_1k=0.015,      # $15 per MTok
+            cache_creation_price_per_1k=0.00375,  # $3.75 per MTok
+            cache_read_price_per_1k=0.0003  # $0.30 per MTok
         ),
         "claude-3-haiku-20240307": ModelPricing(
             model_name="claude-3-haiku-20240307",
-            input_price_per_1k=0.25,
-            output_price_per_1k=1.25,
-            cache_creation_price_per_1k=0.3,
-            cache_read_price_per_1k=0.03
+            input_price_per_1k=0.00025,     # $0.25 per MTok
+            output_price_per_1k=0.00125,    # $1.25 per MTok
+            cache_creation_price_per_1k=0.0003,   # $0.30 per MTok
+            cache_read_price_per_1k=0.00003 # $0.03 per MTok
         )
     }
 

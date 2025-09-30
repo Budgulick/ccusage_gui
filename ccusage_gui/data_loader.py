@@ -271,7 +271,7 @@ class DataLoader:
 
     def _extract_timestamp(self, data: Dict) -> Optional[datetime]:
         """Extract timestamp from usage data."""
-        timestamp_fields = ['created_at', 'timestamp', 'time']
+        timestamp_fields = ['timestamp', 'created_at', 'time']
 
         for field in timestamp_fields:
             if field in data:
@@ -294,8 +294,13 @@ class DataLoader:
 
     def _extract_model(self, data: Dict) -> Optional[str]:
         """Extract model name from usage data."""
-        model_fields = ['model', 'model_name']
+        # Check message.model first (Claude Code format)
+        if 'message' in data and isinstance(data['message'], dict):
+            if 'model' in data['message'] and data['message']['model']:
+                return str(data['message']['model'])
 
+        # Fallback to direct model fields
+        model_fields = ['model', 'model_name']
         for field in model_fields:
             if field in data and data[field]:
                 return str(data[field])
@@ -304,7 +309,19 @@ class DataLoader:
 
     def _extract_tokens(self, data: Dict) -> Optional[Dict[str, int]]:
         """Extract token usage information from usage data."""
-        # Look for usage object first
+        # Check message.usage first (Claude Code format)
+        if 'message' in data and isinstance(data['message'], dict):
+            if 'usage' in data['message'] and isinstance(data['message']['usage'], dict):
+                usage = data['message']['usage']
+                tokens = {
+                    'input_tokens': int(usage.get('input_tokens', 0)),
+                    'output_tokens': int(usage.get('output_tokens', 0)),
+                    'cache_creation_tokens': int(usage.get('cache_creation_input_tokens', 0)),
+                    'cache_read_tokens': int(usage.get('cache_read_input_tokens', 0))
+                }
+                return tokens
+
+        # Look for direct usage object
         if 'usage' in data and isinstance(data['usage'], dict):
             usage = data['usage']
             tokens = {}
@@ -313,8 +330,8 @@ class DataLoader:
             token_fields = {
                 'input_tokens': ['input_tokens', 'prompt_tokens'],
                 'output_tokens': ['output_tokens', 'completion_tokens'],
-                'cache_creation_tokens': ['cache_creation_tokens'],
-                'cache_read_tokens': ['cache_read_tokens']
+                'cache_creation_tokens': ['cache_creation_tokens', 'cache_creation_input_tokens'],
+                'cache_read_tokens': ['cache_read_tokens', 'cache_read_input_tokens']
             }
 
             for key, possible_fields in token_fields.items():
@@ -341,8 +358,12 @@ class DataLoader:
 
     def _extract_session_id(self, data: Dict) -> str:
         """Extract session ID from usage data."""
-        session_fields = ['session_id', 'conversation_id', 'thread_id', 'id']
+        # Check sessionId first (Claude Code format)
+        if 'sessionId' in data and data['sessionId']:
+            return str(data['sessionId'])
 
+        # Fallback to other fields
+        session_fields = ['session_id', 'conversation_id', 'thread_id', 'id']
         for field in session_fields:
             if field in data and data[field]:
                 return str(data[field])
@@ -353,6 +374,14 @@ class DataLoader:
         """Extract project information from usage data and file path."""
         project_info = {'id': None, 'name': None}
 
+        # Try to get project info from data.cwd (Claude Code format)
+        if 'cwd' in data and data['cwd']:
+            cwd = data['cwd']
+            # Extract project name from cwd path
+            cwd_path = Path(cwd)
+            project_info['name'] = cwd_path.name
+            project_info['id'] = str(cwd_path)
+
         # Try to get project info from data
         if 'project' in data:
             project = data['project']
@@ -362,14 +391,14 @@ class DataLoader:
             else:
                 project_info['id'] = str(project)
 
-        # Try to infer from file path
-        if not project_info['id']:
-            # Look for project ID in path (Claude typically uses UUID-like project IDs)
-            path_parts = file_path.parts
-            for part in reversed(path_parts):
-                if len(part) >= 8 and '-' in part:  # Looks like a project ID
-                    project_info['id'] = part
-                    break
+        # Try to infer from file path (parent directory name in .claude/projects)
+        if not project_info['name']:
+            parent_dir = file_path.parent.name
+            if parent_dir and parent_dir != 'projects':
+                # Convert directory name format: E--Projects-ccusage-gui -> E:\Projects\ccusage-gui
+                project_info['name'] = parent_dir.replace('--', ':\\', 1).replace('-', ' ', 1).replace('-', '/')
+                if not project_info['id']:
+                    project_info['id'] = parent_dir
 
         return project_info
 
